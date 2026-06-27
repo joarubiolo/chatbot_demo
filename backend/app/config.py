@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     qdrant_path: str = "./qdrant_data"
     supabase_url: str = ""
     supabase_key: str = ""
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = "*"
     max_tokens: int = 300
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
