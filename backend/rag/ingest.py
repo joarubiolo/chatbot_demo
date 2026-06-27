@@ -11,7 +11,7 @@ from pathlib import Path
 from qdrant_client.models import PointStruct
 
 from rag.embeddings import generar_embedding
-from rag.qdrant_client import client, COLLECTION_NAME
+from rag.qdrant_client import get_client, COLLECTION_NAME
 
 DOCUMENTS_DIR = Path(__file__).resolve().parent.parent / "documents"
 
@@ -74,7 +74,7 @@ def ingest_all():
                 )
             )
 
-        client.upsert(collection_name=COLLECTION_NAME, points=points)
+        get_client().upsert(collection_name=COLLECTION_NAME, points=points)
         print(f"  -> {len(points)} chunks indexados")
 
 

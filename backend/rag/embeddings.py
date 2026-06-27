@@ -12,5 +12,8 @@ def get_model():
 
 
 def generar_embedding(texto: str) -> list[float]:
-    modelo = get_model()
-    return modelo.encode(texto).tolist()
+    try:
+        modelo = get_model()
+        return modelo.encode(texto).tolist()
+    except Exception:
+        return []

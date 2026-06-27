@@ -1,11 +1,10 @@
 services:
   - type: web
     name: chatbot-turismo-api
-    runtime: python
+    runtime: docker
     repo: https://github.com/joarubiolo/chatbot_demo
     branch: main
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./backend/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: OPENROUTER_API_KEY
@@ -17,6 +16,6 @@ services:
       - key: QDRANT_PATH
         value: ./qdrant_data
       - key: CORS_ORIGINS
-        value: https://tu-frontend.vercel.app
+        value: https://chatbot-demo-gules.vercel.app
       - key: MAX_TOKENS
         value: "300"
