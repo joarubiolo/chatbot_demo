@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: chatbot-turismo-api
+    runtime: python
+    repo: https://github.com/joarubiolo/chatbot_demo
+    branch: main
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: LLM_MODEL
+        value: google/gemini-2.5-flash
+      - key: QDRANT_PATH
+        value: ./qdrant_data
+      - key: CORS_ORIGINS
+        value: https://tu-frontend.vercel.app
+      - key: MAX_TOKENS
+        value: "300"
