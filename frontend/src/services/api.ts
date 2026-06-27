@@ -1,6 +1,8 @@
 import { ChatRequest, ChatResponse, HealthResponse } from '../types'
 
-const API_BASE = '/api/v1'
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api/v1`
+  : '/api/v1'
 
 export async function sendMessage(message: string): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE}/chat`, {
@@ -13,7 +15,8 @@ export async function sendMessage(message: string): Promise<ChatResponse> {
 }
 
 export async function checkHealth(): Promise<HealthResponse> {
-  const res = await fetch('/health')
+  const base = import.meta.env.VITE_API_URL || ''
+  const res = await fetch(`${base}/health`)
   if (!res.ok) throw new Error('Servidor no disponible')
   return res.json()
 }
