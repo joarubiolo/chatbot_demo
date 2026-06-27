@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     qdrant_path: str = "./qdrant_data"
     supabase_url: str = ""
     supabase_key: str = ""
+    embedding_model: str = "text-embedding-3-small"
     cors_origins: str = "*"
     max_tokens: int = 300
 

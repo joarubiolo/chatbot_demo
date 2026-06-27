@@ -4,7 +4,7 @@ from qdrant_client.models import Distance, VectorParams
 from app.config import settings
 
 COLLECTION_NAME = "turismo"
-VECTOR_SIZE = 384
+VECTOR_SIZE = 1536
 
 _client = None
 
@@ -18,10 +18,14 @@ def get_client():
 
 
 def _ensure_collection():
-    collections = _client.get_collections().collections
-    names = [c.name for c in collections]
-    if COLLECTION_NAME not in names:
+    try:
         _client.create_collection(
             collection_name=COLLECTION_NAME,
             vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
         )
+    except Exception:
+        pass
+
+
+def get_vector_size() -> int:
+    return VECTOR_SIZE

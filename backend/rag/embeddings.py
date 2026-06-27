@@ -1,19 +1,26 @@
-from sentence_transformers import SentenceTransformer
+from openai import OpenAI
 
-MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-_modelo = None
+from app.config import settings
+
+_clients: dict[str, OpenAI] = {}
 
 
-def get_model():
-    global _modelo
-    if _modelo is None:
-        _modelo = SentenceTransformer(MODEL_NAME)
-    return _modelo
+def _get_openai() -> OpenAI:
+    if "embeddings" not in _clients:
+        _clients["embeddings"] = OpenAI(
+            base_url=settings.openrouter_base_url,
+            api_key=settings.openrouter_api_key,
+        )
+    return _clients["embeddings"]
 
 
 def generar_embedding(texto: str) -> list[float]:
     try:
-        modelo = get_model()
-        return modelo.encode(texto).tolist()
+        client = _get_openai()
+        response = client.embeddings.create(
+            model=settings.embedding_model,
+            input=texto,
+        )
+        return response.data[0].embedding
     except Exception:
         return []

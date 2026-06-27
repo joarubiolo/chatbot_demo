@@ -4,20 +4,29 @@ Script de ingesta de documentos PDF a Qdrant.
 Uso:
     python -m rag.ingest
 
-Busca archivos .pdf en documents/ y los indexa en la colección "turismo".
+Busca archivos .pdf en documents/, genera embeddings vía OpenRouter API,
+los indexa en Qdrant y exporta un archivo vectors.json para persistencia.
 """
 
+import json
 from pathlib import Path
-from qdrant_client.models import PointStruct
 
-from rag.embeddings import generar_embedding
+from qdrant_client.models import PointStruct
+from openai import OpenAI
+
+from app.config import settings
 from rag.qdrant_client import get_client, COLLECTION_NAME
 
 DOCUMENTS_DIR = Path(__file__).resolve().parent.parent / "documents"
+VECTORS_FILE = Path(__file__).resolve().parent / "vectors.json"
+
+_openai_client = OpenAI(
+    base_url=settings.openrouter_base_url,
+    api_key=settings.openrouter_api_key,
+)
 
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
-    """Divide un texto en chunks de tamaño fijo con solapamiento."""
     chunks = []
     start = 0
     while start < len(text):
@@ -30,7 +39,6 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]
 
 
 def extract_text_from_pdf(path: Path) -> str:
-    """Extrae texto de un archivo PDF usando pypdf."""
     from pypdf import PdfReader
 
     reader = PdfReader(path)
@@ -42,11 +50,22 @@ def extract_text_from_pdf(path: Path) -> str:
     return text
 
 
+def generar_embedding_api(texto: str) -> list[float]:
+    response = _openai_client.embeddings.create(
+        model=settings.embedding_model,
+        input=texto,
+    )
+    return response.data[0].embedding
+
+
 def ingest_all():
     pdf_files = list(DOCUMENTS_DIR.glob("*.pdf"))
     if not pdf_files:
         print("No se encontraron archivos PDF en documents/")
         return
+
+    client = get_client()
+    all_points = []
 
     for pdf_path in pdf_files:
         print(f"Procesando: {pdf_path.name}")
@@ -61,7 +80,8 @@ def ingest_all():
 
         points = []
         for i, chunk in enumerate(chunks):
-            vector = generar_embedding(chunk)
+            print(f"  -> Generando embedding para chunk {i+1}/{len(chunks)}")
+            vector = generar_embedding_api(chunk)
             points.append(
                 PointStruct(
                     id=f"{pdf_path.stem}-{i}",
@@ -74,8 +94,21 @@ def ingest_all():
                 )
             )
 
-        get_client().upsert(collection_name=COLLECTION_NAME, points=points)
-        print(f"  -> {len(points)} chunks indexados")
+        client.upsert(collection_name=COLLECTION_NAME, points=points)
+        print(f"  -> {len(points)} chunks indexados en Qdrant")
+        all_points.extend(points)
+
+    # Exportar a vectors.json para persistencia
+    export_data = []
+    for p in all_points:
+        export_data.append({
+            "id": p.id,
+            "vector": p.vector,
+            "payload": p.payload,
+        })
+
+    VECTORS_FILE.write_text(json.dumps(export_data, ensure_ascii=False, indent=2))
+    print(f"  -> {len(export_data)} vectores exportados a {VECTORS_FILE.name}")
 
 
 if __name__ == "__main__":
