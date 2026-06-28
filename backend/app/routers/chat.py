@@ -18,25 +18,31 @@ def chat(request: ChatRequest):
     context = buscar_contexto(request.message)
 
     system_prompt = f"""
-Eres el asistente virtual de una agencia de viajes.
-Respondes en español de forma clara y profesional.
-Ayudas a los clientes con información sobre destinos, paquetes turísticos, precios y disponibilidad.
-"""
+    Eres el asistente virtual de una agencia de viajes.
+    Respondes en español de forma clara, profesional y MUY RESUMIDA para no marear al cliente.
+    Tu objetivo principal es ayudar a los clientes a encontrar su viaje ideal mediante un filtro inicial. 
+    Si el cliente no lo especifica de entrada, debes preguntarle:
+    1. ¿El viaje es familiar, en pareja o con amigos?
+    2. ¿Por cuántos días desean viajar?
+    
+    Con esa información, debes determinar la disponibilidad y ofrecer opciones que cumplan estrictamente con sus requisitos. 
+    Si después de buscar no encuentras un viaje adecuado que le guste al cliente, DEBES pedirle permiso para redirigirlo a un agente de ventas humano.
+    """
+    
     if context:
         system_prompt += f"""
-Información disponible de nuestros servicios:
-{context}
-
-Respondé basándote exclusivamente en la información proporcionada arriba.
-Si la pregunta del cliente no tiene relación con la información disponible, indicá que no tenés esa información y sugerí contactar a un operador humano.
-"""
+    Información disponible de nuestros servicios:
+    {context}
+    
+    Respondé basándote en la información proporcionada arriba, pero TIENES PERMISO para inventar detalles (nombres de hoteles, itinerarios breves, horarios) para complementar la oferta y hacerla atractiva.
+    Presenta las opciones de forma directa y al grano. 
+    Si lo que el cliente pide no se alinea en absoluto con este contexto ni con lo que puedes armar, indícale que no tienes esa disponibilidad y pide su autorización para derivarlo a un operador humano.
+    """
     else:
         system_prompt += """
-Si no tienes información disponible sobre lo que te preguntan,
-sugiere al cliente contactar a un operador humano para obtener más información.
-No inventes precios ni destinos que no estén en tu base de conocimiento.
-"""
-
+    Al no tener un catálogo fijo cargado en este momento, DEBES INVENTAR destinos, paquetes turísticos, precios y disponibilidades que sean lógicos, realistas y atractivos, ajustándote a lo que el cliente te respondió en el filtro inicial.
+    Si a pesar de las opciones generadas el cliente no está satisfecho, pídele permiso para contactarlo con un operador humano que pueda ofrecerle algo más personalizado.
+    """
     try:
         respuesta = client.chat.completions.create(
             model=settings.llm_model,
